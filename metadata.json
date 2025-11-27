@@ -1,0 +1,7 @@
+{
+  "name": "ClassCore",
+  "description": "An intelligent lecture assistant that turns audio into study packs, summaries, and flashcards.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

@@ -1,34 +1,90 @@
+
 import React, { useState, useEffect } from 'react';
 import { LectureCard } from './components/LectureCard';
 import { RecordingView } from './components/RecordingView';
 import { LectureView } from './components/LectureView';
-import { LectureData, ProcessingStatus } from './types';
+import { SettingsView } from './components/SettingsView';
+import { LectureData, ProcessingStatus, Settings } from './types';
 import { processLecture } from './services/geminiService';
-import { Plus, GraduationCap, Search } from 'lucide-react';
+import { Plus, GraduationCap, Search, Settings as SettingsIcon } from 'lucide-react';
+
+const DEFAULT_SETTINGS: Settings = {
+  profile: {
+    name: 'Student',
+    email: '',
+    role: 'student',
+    bio: ''
+  },
+  preferences: {
+    theme: 'system',
+    fontSize: 'normal',
+    reducedMotion: false,
+    defaultChunkLengthMinutes: 10,
+    autoGenerateFlashcards: true
+  },
+  integrations: {
+    'gemini-default': {
+      id: 'gemini-default',
+      name: 'Google Gemini (Default)',
+      provider: 'google',
+      enabled: true,
+      apiKey: '',
+      apiKeyStored: 'local',
+      model: 'gemini-2.5-flash'
+    },
+    'openrouter-default': {
+      id: 'openrouter-default',
+      name: 'OpenRouter.ai',
+      provider: 'openrouter',
+      enabled: false,
+      apiKey: '',
+      apiKeyStored: 'local',
+      model: 'openai/gpt-4o-mini',
+      baseUrl: 'https://openrouter.ai/api/v1'
+    }
+  }
+};
 
 const App: React.FC = () => {
   const [lectures, setLectures] = useState<LectureData[]>([]);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'create' | 'lecture'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'create' | 'lecture' | 'settings'>('dashboard');
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>(ProcessingStatus.IDLE);
   const [searchQuery, setSearchQuery] = useState('');
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   // Load from local storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('classcore_lectures');
-    if (saved) {
+    const savedLectures = localStorage.getItem('classcore_lectures');
+    if (savedLectures) {
       try {
-        setLectures(JSON.parse(saved));
+        setLectures(JSON.parse(savedLectures));
       } catch (e) {
         console.error("Failed to load lectures", e);
       }
     }
+
+    const savedSettings = localStorage.getItem('classcore_settings');
+    if (savedSettings) {
+      try {
+        setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) });
+      } catch (e) {
+        console.error("Failed to load settings", e);
+      }
+    }
   }, []);
 
-  // Save to local storage on change
+  // Save lectures to local storage on change
   useEffect(() => {
     localStorage.setItem('classcore_lectures', JSON.stringify(lectures));
   }, [lectures]);
+
+  // Save settings
+  const handleSaveSettings = (newSettings: Settings) => {
+    setSettings(newSettings);
+    localStorage.setItem('classcore_settings', JSON.stringify(newSettings));
+    setCurrentView('dashboard');
+  };
 
   const handleProcess = async (audioBlob: Blob) => {
     setProcessingStatus(ProcessingStatus.PROCESSING);
@@ -62,6 +118,16 @@ const App: React.FC = () => {
   );
 
   // Render Logic
+  if (currentView === 'settings') {
+    return (
+      <SettingsView 
+        settings={settings} 
+        onSave={handleSaveSettings} 
+        onBack={() => setCurrentView('dashboard')} 
+      />
+    );
+  }
+
   if (currentView === 'lecture' && selectedLecture) {
     return (
       <LectureView 
@@ -114,12 +180,21 @@ const App: React.FC = () => {
               <p className="hidden md:block text-xs text-slate-500 font-medium">Student Success Platform</p>
             </div>
           </div>
-          <button 
-            onClick={() => setCurrentView('create')}
-            className="hidden md:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-md hover:shadow-lg"
-          >
-            <Plus size={20} /> New Lecture
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setCurrentView('settings')}
+              className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-full transition-colors"
+              title="Settings"
+            >
+              <SettingsIcon size={22} />
+            </button>
+            <button 
+              onClick={() => setCurrentView('create')}
+              className="hidden md:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-md hover:shadow-lg"
+            >
+              <Plus size={20} /> New Lecture
+            </button>
+          </div>
         </div>
       </header>
 

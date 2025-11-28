@@ -1,3 +1,4 @@
+
 export interface Flashcard {
   front: string;
   back: string;
@@ -31,6 +32,47 @@ export enum ProcessingStatus {
 
 export interface AppState {
   lectures: LectureData[];
-  currentView: 'dashboard' | 'lecture' | 'create';
+  currentView: 'dashboard' | 'lecture' | 'create' | 'settings';
   selectedLectureId: string | null;
+}
+
+// --- Settings & Integrations Types ---
+
+export type ThemeOption = 'light' | 'dark' | 'system';
+export type FontSizeOption = 'small' | 'normal' | 'large';
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  role: 'student' | 'teacher' | 'admin' | 'other';
+  bio: string;
+  avatarUrl?: string;
+}
+
+export interface IntegrationConfig {
+  id: string;
+  name: string;
+  provider: 'openai' | 'anthropic' | 'google' | 'openrouter' | 'elevenlabs' | 'other';
+  enabled: boolean;
+  apiKey: string;
+  apiKeyStored: 'local' | 'none'; // 'server' not used in this local-first version
+  model?: string;
+  baseUrl?: string; // For OpenRouter/Custom
+  httpReferer?: string; // OpenRouter specific
+  xTitle?: string; // OpenRouter specific
+  lastTestedAt?: string | null;
+}
+
+export interface AppPreferences {
+  theme: ThemeOption;
+  fontSize: FontSizeOption;
+  reducedMotion: boolean;
+  defaultChunkLengthMinutes: number;
+  autoGenerateFlashcards: boolean;
+}
+
+export interface Settings {
+  profile: UserProfile;
+  integrations: Record<string, IntegrationConfig>;
+  preferences: AppPreferences;
 }
